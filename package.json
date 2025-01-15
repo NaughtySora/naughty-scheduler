@@ -1,0 +1,42 @@
+{
+  "name": "naughty-scheduler",
+  "version": "0.1.0",
+  "author": "NaughtySora <naughtysora@proton.me>",
+  "license": "MIT",
+  "description": "Node js scheduler",
+  "main": "main.js",
+  "types": "main.d.ts",
+  "readMeFilename": "README.md",
+  "keywords": [
+    "nodejs",
+    "scheduler",
+    "job",
+    "cronjob",
+    "timeout",
+    "timer",
+    "interval"
+  ],
+  "files": [
+    "lib/",
+    "main.d.ts"
+  ],
+  "engines": {
+    "node": "18 || 19 || 20 || 21 || 22 || 23"
+  },
+  "scripts": {
+    "types": "tsc -p ./tsconfig.json",
+    "test": "node ./test/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NaughtySora/naughty-scheduler.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NaughtySora/naughty-scheduler/issues",
+    "email": "naughtysora@proton.me"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.2"
+  }
+}
