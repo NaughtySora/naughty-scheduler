@@ -34,17 +34,17 @@ scheduler.once(job_world);
 scheduler.every(job_you);
 // will fire every 1day from time you assigned it.
 
-scheduler.fire(job_you)
- // will fire callback immediately and job stays.
+scheduler.fire(job_you);
+// will fire callback immediately and job stays.
  
-scheduler.fire(job_you, true)
- // will fire callback immediately and job cancels.
+scheduler.fire(job_you, true);
+// will fire callback immediately and job cancels.
 
-job_hello.setDate(new Date("2026-01-17T21:00:00.000Z"))
+job_hello.setDate(new Date("2026-01-17T21:00:00.000Z"));
 scheduler.reschedule(job_hello, "once");
-// reschedule and change kind to "once";
+// reschedule and change kind to "once"
 
-job_hello.setDate(new Date("2026-01-17T00:00:00.000Z"))
+job_hello.setDate(new Date("2026-01-17T00:00:00.000Z"));
 scheduler.reschedule(job_hello);
 // reschedule and kind wasn't provided, so it stays "once"
 
@@ -61,6 +61,7 @@ const me = scheduler.find("me");
 // get job by tag
 
 for(const job of scheduler){ //iterable
+  console.log(job);
 }
 
 scheduler.pipe([
