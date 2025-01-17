@@ -4,7 +4,7 @@ type Events = "fire" | "cancel" | "cancelAll" | "stop" | "add";
 type Callback = (...args: any[]) => any;
 
 export class Job<T extends Callback> {
-  constructor(callback: T, params: { time?: DateConstructor, params: Parameters<T>, tag?: any });
+  constructor(callback: T, params?: { time?: ConstructorParameters<DateConstructor>[0], params?: Parameters<T>, tag?: any });
   setTime(time: number): this;
   setDate(time: DateConstructor): this;
   verbalTime(time: string): this;
@@ -18,7 +18,7 @@ export class Scheduler {
   fire(job: Job<any>, terminate?: boolean): this;
   cancel(job: Job<any>): this;
   cancelAll(): this;
-  reschedule(job: Job<any>, kind: any): this;
+  reschedule(job: Job<any>, kind?: Kind): this;
   stop(): Array<Job<any>>;
   on(name: Events, cb: (job: Job<any>) => any): this;
   find(tag: any): Job<any> | undefined;
