@@ -17,12 +17,16 @@ Job serves for holding, time when job is firing, callback will be fired, paramet
   job.verbalDate("10m"); // Date.now() + 10 * 60 * 1000
   const job_you = new Job(print, {time: 1000, params: [" You O:"]});
   job_you.verbalTime("1d"); // 24 * 60 * 60 * 1000;
+  const job_kind = new Job(print, {time: 1000, params: [" You O:"], kind: "every"});
 ```
 
 ## Scheduler
 
 ```js
 const scheduler = new Scheduler();
+
+scheduler.add(job_kind);
+// kind already set, so job is gonna be "every" means interval, by time(1000);
 
 scheduler.once(job_world);
 // will fire in 2025 10 11 in 00:00.
@@ -55,6 +59,14 @@ const array_of_jobs = scheduler.stop();
 
 const me = scheduler.find("me");
 // get job by tag
+
+for(const job of scheduler){ //iterable
+}
+
+scheduler.pipe([
+  new Job(print, {time: 2000, kind: "every"}),
+  new Job(print, {time: "2025-12-12", kind: "once"}),
+]); // bulk add but has to be kind, jobs with no kind will be omitted.
 
 scheduler.on("fire", console.log).on("cancelAll", () => {
   //code

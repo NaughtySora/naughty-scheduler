@@ -2,9 +2,15 @@
 type Kind = "once" | "every";
 type Events = "fire" | "cancel" | "cancelAll" | "stop" | "add";
 type Callback = (...args: any[]) => any;
+type JobAny = Job<any>;
 
 export class Job<T extends Callback> {
-  constructor(callback: T, params?: { time?: ConstructorParameters<DateConstructor>[0], params?: Parameters<T>, tag?: any });
+  constructor(callback: T, params?: { 
+    time?: ConstructorParameters<DateConstructor>[0];
+    params?: Parameters<T>;
+    kind?: Kind;
+    tag?: any;
+   });
   setTime(time: number): this;
   setDate(time: DateConstructor): this;
   verbalTime(time: string): this;
@@ -13,14 +19,17 @@ export class Job<T extends Callback> {
 
 export class Scheduler {
   constructor();
-  once(job: Job<any>): this;
-  every(job: Job<any>): this;
-  fire(job: Job<any>, terminate?: boolean): this;
-  cancel(job: Job<any>): this;
+  add(job: JobAny): this;
+  once(job: JobAny): this;
+  every(job: JobAny): this;
+  fire(job: JobAny, terminate?: boolean): this;
+  cancel(job: JobAny): this;
   cancelAll(): this;
-  reschedule(job: Job<any>, kind?: Kind): this;
-  stop(): Array<Job<any>>;
-  on(name: Events, cb: (job: Job<any>) => any): this;
-  find(tag: any): Job<any> | undefined;
+  reschedule(job: JobAny, kind?: Kind): this;
+  stop(): Array<JobAny>;
+  on(name: Events, cb: (job?: JobAny) => any): this;
+  find(tag: any): JobAny | undefined;
+  pipe(jobs: Array<JobAny>): this;
+  [Symbol.iterator]: Iterable<JobAny>;
   static kinds: Readonly<Record<Kind, string>>;
 }

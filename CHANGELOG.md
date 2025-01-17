@@ -10,3 +10,10 @@
 - Scheduler
 - Types
 - README
+
+## [0.3.0]
+
+- Tests/use cases
+- Scheduler pipe, iterable, add
+- Job constructor kind
+- Types update
