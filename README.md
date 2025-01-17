@@ -61,6 +61,7 @@ const me = scheduler.find("me");
 // get job by tag
 
 for(const job of scheduler){ //iterable
+  console.log(job)
 }
 
 scheduler.pipe([
