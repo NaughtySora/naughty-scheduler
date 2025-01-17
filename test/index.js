@@ -253,3 +253,14 @@ const iterator = () => {
     console.log(job);
   }
 };
+
+const pipe = () => {
+  const scheduler = new Scheduler();
+  const jobs = [
+    new Job(print, { time: 1000, kind: "every", params: ["every-1000"] }),
+    new Job(print, { time: 1000, params: ["never"]}), // will be omitted
+    new Job(print, { time: Date.now() + 2500, kind: "once", params: ["once-2500"] })
+  ];
+
+  scheduler.pipe(jobs);
+};

@@ -5,7 +5,12 @@ type Callback = (...args: any[]) => any;
 type JobAny = Job<any>;
 
 export class Job<T extends Callback> {
-  constructor(callback: T, params?: { time?: ConstructorParameters<DateConstructor>[0], params?: Parameters<T>, tag?: any });
+  constructor(callback: T, params?: { 
+    time?: ConstructorParameters<DateConstructor>[0];
+    params?: Parameters<T>;
+    kind?: Kind;
+    tag?: any;
+   });
   setTime(time: number): this;
   setDate(time: DateConstructor): this;
   verbalTime(time: string): this;
@@ -24,7 +29,7 @@ export class Scheduler {
   stop(): Array<JobAny>;
   on(name: Events, cb: (job?: JobAny) => any): this;
   find(tag: any): JobAny | undefined;
-  pipe(commands: Array<JobAny>): this;
+  pipe(jobs: Array<JobAny>): this;
   [Symbol.iterator]: Iterable<JobAny>;
   static kinds: Readonly<Record<Kind, string>>;
 }
