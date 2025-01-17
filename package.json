@@ -1,6 +1,6 @@
 {
   "name": "naughty-scheduler",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "NaughtySora <naughtysora@proton.me>",
   "license": "MIT",
   "description": "Node js scheduler",
@@ -38,5 +38,8 @@
   "devDependencies": {
     "@types/node": "^22.10.5",
     "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "naughty-util": "^0.3.7"
   }
 }
