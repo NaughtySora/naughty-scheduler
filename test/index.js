@@ -268,3 +268,7 @@ const pipe = () => {
 
   scheduler.pipe(jobs);
 };
+
+const fns = [job, every, once, fire, reschedule, on, find, cancel, cancelAll, stop, iterator, pipe];
+
+for(const fn of fns) fn();

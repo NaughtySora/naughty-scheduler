@@ -23,3 +23,7 @@
 - Long timer to prevent timer singed int 32 overflow
 - Testing with long timer
 - Testing memory leaks
+
+## [0.4.1] 2025-01-18
+
+- Retesting, running all cases
