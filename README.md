@@ -41,11 +41,11 @@ scheduler.fire(job_you);
 scheduler.fire(job_you, true);
 // will fire callback immediately and job cancels.
 
-job_hello.setDate(new Date("2026-01-17T21:00:00.000Z"));
+job_hello.setDate("2026-01-17T21:00:00.000Z");
 scheduler.reschedule(job_hello, "once");
 // reschedule and change kind to "once"
 
-job_hello.setDate(new Date("2026-01-17T00:00:00.000Z"));
+job_hello.setDate("2026-01-17T00:00:00.000Z");
 scheduler.reschedule(job_hello);
 // reschedule and kind wasn't provided, so it stays "once"
 
