@@ -17,3 +17,9 @@
 - Scheduler pipe, iterable, add
 - Job constructor kind
 - Types update
+
+## [0.4.0] 2025-01-18
+
+- Long timer to prevent timer singed int 32 overflow
+- Testing with long timer
+- Testing memory leaks

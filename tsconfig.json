@@ -7,5 +7,5 @@
     "baseUrl": ".",
     "preserveWatchOutput": true
   },
-  "include": ["*.d.ts", "*.ts"]
+  "include": ["*.d.ts"]
 }
