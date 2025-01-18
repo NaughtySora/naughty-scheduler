@@ -69,7 +69,9 @@ scheduler.pipe([
   new Job(print, {time: "2025-12-12", kind: "once"}),
 ]); // bulk add but has to be kind, jobs with no kind will be omitted.
 
-scheduler.on("fire", console.log).on("cancelAll", () => {
+scheduler
+.on("fire", console.log)
+.on("cancelAll", () => {
   //code
 });
 // subscribe to scheduler events
