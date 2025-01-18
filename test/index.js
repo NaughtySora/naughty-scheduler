@@ -70,7 +70,7 @@ const every = () => {
   setTimeout(() => {
     scheduler.cancelAll();
   }, 10000);
-}
+};
 
 const once = () => {
   const scheduler = new Scheduler();
@@ -81,7 +81,11 @@ const once = () => {
 
   scheduler.once(jobs[0]);
   scheduler.once(jobs[1]);
-}
+
+  setTimeout(() => {
+    scheduler.cancelAll();
+  }, 2000);
+};
 
 const fire = () => {
   const scheduler = new Scheduler();
@@ -170,7 +174,7 @@ const find = () => {
   assert.deepEqual(find_symbol, jobs.symbol);
 
   scheduler.cancelAll();
-}
+};
 
 const cancel = () => {
   const scheduler = new Scheduler();
@@ -258,7 +262,7 @@ const pipe = () => {
   const scheduler = new Scheduler();
   const jobs = [
     new Job(print, { time: 1000, kind: "every", params: ["every-1000"] }),
-    new Job(print, { time: 1000, params: ["never"]}), // will be omitted
+    new Job(print, { time: 1000, params: ["never"] }), // will be omitted
     new Job(print, { time: Date.now() + 2500, kind: "once", params: ["once-2500"] })
   ];
 
