@@ -2,6 +2,8 @@
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/NaughtySora/naughty-scheduler/blob/master/LICENSE)
 [![snyk](https://snyk.io/test/github/NaughtySora/naughty-scheduler/badge.svg)](https://snyk.io/test/github/NaughtySora/naughty-scheduler)
 [![npm version](https://badge.fury.io/js/naughty-scheduler.svg)](https://badge.fury.io/js/naughty-scheduler)
+[![NPM Downloads](https://img.shields.io/npm/dm/naughty-scheduler)](https://www.npmjs.com/package/naughty-scheduler)
+[![NPM Downloads](https://img.shields.io/npm/dt/naughty-scheduler)](https://www.npmjs.com/package/naughty-scheduler)
 
 ## Usage
 - Install: `npm install naughty-scheduler`
