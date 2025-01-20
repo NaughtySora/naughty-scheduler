@@ -27,3 +27,7 @@
 ## [0.4.1] 2025-01-18
 
 - Retesting, running all cases
+
+## [0.4.1a] 2025-01-18
+
+- More readable README description

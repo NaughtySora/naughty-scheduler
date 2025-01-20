@@ -11,8 +11,6 @@
 
 ## Job
 
-Job serves for holding, time when job is firing, callback will be fired, parameters and some help information like tag, kind
-
 ```js
   const print = console.log.bind(null, "Hello");
   const job_world = new Job(print, {time: "2025-10-11", params: [" World!"]});
@@ -27,58 +25,68 @@ Job serves for holding, time when job is firing, callback will be fired, paramet
 ## Scheduler
 
 ```js
+const print = console.log.bind(null, "Hello");
 const scheduler = new Scheduler();
 
+const job_kind = new Job(print, {time: 1000, kind: "every"});
 scheduler.add(job_kind);
-// kind already set, so job is gonna be "every" means interval, by time(1000);
+// kind has been already set to "every", so scheduler is gonna fire callback every 1s.
 
+const job_world = new Job(print, {time: "2025-10-11", params: [" World!"]});
 scheduler.once(job_world);
-// will fire in 2025 10 11 in 00:00.
+// scheduler will fire callback in 2025 10 11 in 00:00 once.
 
+const job_you = new Job(print, {time: 1000, params: [" You O:"]});
+job_you.verbalTime("1d");
 scheduler.every(job_you);
-// will fire every 1day from time you assigned it.
+// scheduler will fire callback every 1day from now.
 
 scheduler.fire(job_you);
-// will fire callback immediately and job stays.
+// callback will fire callback immediately and and keep job waiting it time.
  
 scheduler.fire(job_you, true);
-// will fire callback immediately and job cancels.
+// callback will fire callback immediately and remove job form the queue.
 
 job_hello.setDate("2026-01-17T21:00:00.000Z");
 scheduler.reschedule(job_hello, "once");
-// reschedule and change kind to "once"
+// To reschedule we change the time in job and reassign it with "once".
+// Basically works like this:
+// 1. We changed time in job and call scheduler.reschedule.
+// 2. scheduler will remove callback from queue and job from dataset.
+// 3. scheduler will add job and callback back with updated information.
 
 job_hello.setDate("2026-01-17T00:00:00.000Z");
 scheduler.reschedule(job_hello);
-// reschedule and kind wasn't provided, so it stays "once"
+// Here we changed time again and reschedule job "job_hello" again.
+// We didn't provide second param "kind" so the kind of the job will be as previous (once).
 
 scheduler.cancel(job_world);
-// cancel job
+// scheduler will cancel provided job.
 
 scheduler.cancelAll();
-// cancelAll job
+// scheduler cancels all the jobs.
 
 const array_of_jobs = scheduler.stop();
-// cancel and get all jobs which weren't called.
+// scheduler cancels all the jobs and returns array of all jobs weren't called.
 
 const me = scheduler.find("me");
-// get job by tag
+// finds job by it tag.
 
-for(const job of scheduler){ //iterable
+for(const job of scheduler){
   console.log(job);
 }
+// scheduler iterates jobs collection.
 
 scheduler.pipe([
   new Job(print, {time: 2000, kind: "every"}),
   new Job(print, {time: "2025-12-12", kind: "once"}),
-]); // bulk add but has to be kind, jobs with no kind will be omitted.
+]); 
+// scheduler will add all the jobs from iterable with provided "kind" field.
 
-scheduler
-.on("fire", console.log)
-.on("cancelAll", () => {
-  //code
-});
+scheduler.on("fire", console.log)
 // subscribe to scheduler events
+// event list: "fire", "cancel", "cancelAll", "add", "stop"
+// Also you can find all the event by using static field "Scheduler.kinds"
 ```
 
 ## Part of naughty stack
