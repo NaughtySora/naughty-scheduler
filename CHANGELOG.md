@@ -28,6 +28,6 @@
 
 - Retesting, running all cases
 
-## [0.4.1a] 2025-01-18
+## [0.4.1a] 2025-01-20
 
 - More readable README description
