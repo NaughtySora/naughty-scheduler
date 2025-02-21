@@ -31,3 +31,7 @@
 ## [0.4.1a] 2025-01-20
 
 - More readable README description
+
+## [0.4.2] 2025-01-20
+
+- long timer optimization
