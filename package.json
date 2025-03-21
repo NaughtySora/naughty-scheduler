@@ -40,6 +40,6 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "naughty-util": "^0.4.1"
+    "naughty-util": "^0.4.2"
   }
 }
