@@ -1,274 +1,304 @@
 "use strict";
 
-const { array, misc } = require("naughty-util");
+const { array } = require("naughty-util");
 const { Job, Scheduler } = require("../main");
-const assert = require("node:assert");
+const assert = require("node:assert/strict");
+const { describe, it } = require('node:test');
 
-const print = misc.partial(console.log, "Test Output");
+const noop = () => { };
 
-const job = () => {
-  const scheduler = new Scheduler();
+describe('Job', () => {
+  assert.deepEqual(new Job(noop, { params: [9999999] }).params, [9999999]);
+  assert.equal(new Job(noop).callback, noop);
+  assert.ok(new Job(noop, { time: 5000 }).time > 0);
+  assert.equal(new Job(noop, { time: "2025-02-02" }).time, new Date('2025-02-02').getTime());
+  const date = new Date();
+  assert.equal(new Job(noop, { time: date.toISOString() }).time, new Date(date.toISOString()).getTime());
+  assert.equal(new Job(noop, { time: date }).time, date.getTime());
+  assert.equal(new Job(noop, { time: date }).time, date.getTime());
+  assert.ok(new Job(noop).verbalTime("0h 0d 0s").time === 0);
+  assert.ok(new Job(noop).verbalTime("2h 2d 2s").time > 0);
+  assert.ok(new Job(noop).verbalDate("0h 0d 0s").time > 0);
+  assert.ok(new Job(noop).verbalDate("2h 2d 2s").time > 0);
+  assert.equal(new Job(noop, { tag: "tag" }).tag, "tag");
+  const tag = Symbol('tag');
+  const job = new Job(noop, { kind: "once", tag }).setDate(Date.now() + 5000);
+  assert.equal(job.tag, tag);
+  assert.equal(job.kind, "once");
+  assert.ok(job.time > 0);
+  assert.ok(new Job(noop).setTime(Date.now()).time > 0);
 
-  const callbackOnly_params = new Job(print, { params: [9999999] });
-  const callbackOnly = new Job(print);
+  assert.throws(() => {
+    new Job(noop).setTime(-1);
+  }, { message: "Value has to be positive integer" });
 
-  const time_n = new Job(print, { time: 5000 });
-  const time_s = new Job(print, { time: "2025-02-02" });
-  const time_iso = new Job(print, { time: new Date().toISOString() });
-  const time_date = new Job(print, { time: new Date() });
+  assert.throws(() => {
+    new Job(noop).setDate('Strange date');
+  }, { message: "Value has to be date constructor parameter" });
+});
 
-  const time_n_p = new Job(print, { time: 5000, params: ["param-1", "param-hello"] });
-  const time_s_p = new Job(print, { time: "2025-02-02", params: ["param-1", "param-hello"] });
-  const time_iso_p = new Job(print, { time: new Date().toISOString(), params: ["param-1", "param-hello"] });
-  const time_date_p = new Job(print, { time: new Date(), params: ["param-1", "param-hello"] });
+describe('Scheduler', () => {
+  it('every', () => {
+    const log = [];
+    const scheduler = new Scheduler();
+    const fn = text => log.push(text);
+    const jobs = [
+      new Job(fn, { time: 2500, params: ["2500"] }),
+      new Job(fn, { time: 1000, params: ["1000"] }),
+    ];
+    jobs.forEach(j => scheduler.every(j));
+    setTimeout(() => {
+      scheduler.cancelAll();
+      assert.deepEqual(log, ['1000', '1000', '2500']);
+    }, 2500);
+  });
 
-  const no_time_verbal = new Job(print).verbalTime("0h 0d 0s");
-  const ime_verbal = new Job(print, { time: 11111 }).verbalTime("2h 2d 2s");
-  const ime_verbal_p = new Job(print, { time: 11111, params: ["param-1", "param-hello"] }).verbalTime("2h 2d 2s");
+  it('once', () => {
+    const log = [];
+    const scheduler = new Scheduler();
+    const fn = text => log.push(text);
+    const jobs = [
+      new Job(fn, { time: Date.now() + 100, params: ["100"] }),
+      new Job(fn, { time: Date.now() + 2500, params: ["2500"] }),
+    ];
+    jobs.forEach(j => scheduler.once(j));
+    setTimeout(() => {
+      scheduler.cancelAll();
+      assert.deepEqual(log, ['100']);
+    }, 2000);
+  });
 
-  const no_time_verbal_date = new Job(print).verbalDate("0h 0d 0s");
-  const ime_verbal_date = new Job(print, { time: 11111 }).verbalDate("1h 23d 0s");
-  const ime_verbal_date_p = new Job(print, { time: 11111, params: ["param-1", "param-hello"] }).verbalDate("1h 23d 0s");
+  it('fire', () => {
+    const log = [];
+    const scheduler = new Scheduler();
+    const fn = text => log.push(text);
+    const once = [
+      new Job(fn, { time: Date.now() + 100, params: ["100"] }),
+      new Job(fn, { time: Date.now() + 500, params: ["500"] }),
+    ];
+    const every = [
+      new Job(fn, { time: 550, params: ["550"] }),
+      new Job(fn, { time: 650, params: ["650"] }),
+    ];
+    once.forEach(j => scheduler.once(j));
+    every.forEach(j => scheduler.every(j));
+    scheduler.fire(once[1]);
+    scheduler.fire(every[0], true);
 
-  const tag_s = new Job(print, { tag: "tag" });
-  const tag_n = new Job(print, { tag: 2 });
-  const tag_o = new Job(print, { tag: {} });
-  const tag_array = new Job(print, { tag: [1, "hello"] });
+    setTimeout(() => {
+      scheduler.cancelAll();
+      assert.deepEqual(log, ['500', '550', '100', '500', '650',]);
+    }, 1000);
+  });
 
-  const kind_tag_date = new Job(print, { kind: "once", tag: "me" }).setDate(Date.now() + 5000);
-  const kind_tag_verbal = new Job(print, { kind: "once", tag: "#" }).verbalDate("2d 10h");
-  const kind_time = new Job(print, { time: 1000, kind: "every", });
-  const kind_time_once = new Job(print, { time: "2025-02-02", kind: "once" });
+  it('reschedule', () => {
+    const log = [];
+    const scheduler = new Scheduler();
+    const fn = text => log.push(text);
+    const jobs = [
+      new Job(fn, { time: Date.now() + 100, params: ["once"] }),
+      new Job(fn, { time: 1000, params: ["every"] }),
+    ];
+    scheduler.once(jobs[0]);
+    scheduler.every(jobs[1]);
+    scheduler.reschedule(jobs[1].verbalTime("1s"));
+    scheduler.reschedule(jobs[0].verbalDate("2s"));
+    setTimeout(() => {
+      scheduler.cancelAll();
+      assert.deepEqual(log, ['every']);
+    }, 1000);
+  });
 
-  const every = [time_n, time_n_p, ime_verbal, ime_verbal_p,];
-  const once = [
-    callbackOnly_params,
-    time_s,
-    ime_verbal_date_p,
-    callbackOnly,
-    time_iso, time_date,
-    time_s_p, time_iso_p, time_date_p, no_time_verbal, no_time_verbal_date, ime_verbal_date,
-    tag_s, tag_n, tag_o, tag_array
-  ];
-  const add = [kind_tag_date, kind_tag_verbal, kind_time, kind_time_once];
+  it('events', () => {
+    const log = [];
+    const scheduler = new Scheduler();
+    const fn = text => log.push(text);
 
-  scheduler.pipe(add);
-  for (const job of every) scheduler.every(job);
-  for (const job of once) scheduler.once(job);
-};
+    const jobs = [
+      new Job(fn, { time: Date.now() + 250, params: ["250"] }),
+      new Job(fn, { time: Date.now() + 275, params: ["275"] }),
+      new Job(fn, { time: 333, params: ["333"] }),
+      new Job(fn, { time: 400, params: ["400"] }),
+    ];
 
-const every = () => {
-  const scheduler = new Scheduler();
-  const jobs = [
-    new Job(print, { time: 2500, params: ["- 2500"] }),
-    new Job(print, { time: 1000, params: ["- 1000"] }),
-  ];
+    scheduler
+      .on("add", (j) => log.push('add'))
+      .on("cancel", (j) => log.push('cancel'))
+      .on("cancelAll", () => log.push('cancelAll'))
+      .on("fire", (j) => log.push('fire'))
+      .on("stop", (j) => log.push('stop'));
 
-  scheduler.every(jobs[0]);
-  scheduler.every(jobs[1]);
+    scheduler.once(jobs[0]);
+    scheduler.once(jobs[1]);
+    scheduler.once(jobs[2]);
+    scheduler.once(jobs[3]);
+    scheduler.cancel(jobs[1]);
+    scheduler.fire(jobs[0]);
 
-  setTimeout(() => {
+    setTimeout(() => {
+      scheduler.cancelAll();
+      assert.deepEqual(log, [
+        'add', 'add',
+        '333', 'fire',
+        '400', 'fire',
+        'cancel', '250',
+        'fire', '250',
+        'fire', 'cancelAll'
+      ]);
+    }, 1000);
+  });
+
+  it('find', () => {
+    const scheduler = new Scheduler();
+    const jobs = array.accessor([
+      new Job(noop, { time: 5000, tag: "tag" }),
+      new Job(noop, { time: 5000, tag: [1, "hello"] }),
+      new Job(noop, { time: 5000, tag: Symbol("test") })
+    ], { tag: 0, array: 1, symbol: 2 });
+    scheduler.every(jobs.tag);
+    scheduler.every(jobs.array);
+    scheduler.every(jobs.symbol);
+    assert.deepEqual(scheduler.find(jobs.tag.tag), jobs.tag);
+    assert.deepEqual(scheduler.find(jobs.array.tag), jobs.array);
+    assert.deepEqual(scheduler.find(jobs.symbol.tag), jobs.symbol);
     scheduler.cancelAll();
-  }, 10000);
-};
+  });
 
-const once = () => {
-  const scheduler = new Scheduler();
-  const jobs = [
-    new Job(print, { time: Date.now() + 1500, params: ["- 1500"] }),
-    new Job(print, { time: Date.now() + 2500, params: ["- 2500"] }),
-  ];
+  it('cancel', () => {
+    const log = [];
+    const canceled = [];
+    const scheduler = new Scheduler();
+    const fn = (text) => log.push(text);
+    const jobs = [
+      new Job(fn, { time: Date.now() + 700, params: ["700"] }),
+      new Job(fn, { time: Date.now() + 500, params: ["500"] }),
+    ];
+    scheduler.on("cancel", (j) => canceled.push(j));
+    jobs.forEach(j => scheduler.once(j));
+    jobs.forEach(j => scheduler.cancel(j));
+    assert.deepEqual(canceled, jobs);
+    assert.deepEqual(log, []);
+  });
 
-  scheduler.once(jobs[0]);
-  scheduler.once(jobs[1]);
-
-  setTimeout(() => {
+  it('cancelAll', () => {
+    const log = [];
+    const scheduler = new Scheduler();
+    const fn = text => log.push(text);
+    const jobs = [
+      new Job(fn, { time: Date.now() + 700, params: ["700"] }),
+      new Job(fn, { time: Date.now() + 500, params: ["500"] }),
+    ];
+    jobs.forEach(j => scheduler.once(j));
+    jobs.forEach(j => scheduler.cancel(j));
     scheduler.cancelAll();
-  }, 2000);
-};
+    assert.deepEqual(log, []);
+  });
 
-const fire = () => {
-  const scheduler = new Scheduler();
-  const jobs = [
-    new Job(print, { time: Date.now() + 1500, params: ["- 1500"] }),
-    new Job(print, { time: Date.now() + 2500, params: ["- 2500"] }),
-    new Job(print, { time: 5500, params: ["- 5500"] }),
-    new Job(print, { time: 6500, params: ["- 6500"] }),
-  ];
+  it('stop', () => {
+    const log = [];
+    const scheduler = new Scheduler();
+    const fn = text => log.push(text);
+    const jobs = [
+      new Job(fn, { time: Date.now() + 500, params: ["500"] }),
+      new Job(fn, { time: Date.now() + 600, params: ["600"] }),
+    ];
+    jobs.forEach(j => scheduler.once(j));
+    setTimeout(() => {
+      scheduler.stop();
+      assert.deepEqual(log, []);
+    }, 250);
+  });
 
-  scheduler.once(jobs[0]);
-  scheduler.once(jobs[1]);
-  scheduler.every(jobs[2]);
-  scheduler.every(jobs[3]);
+  it('iterator', () => {
+    const copy = [];
+    const scheduler = new Scheduler();
+    const jobs = [
+      new Job(noop, { time: Date.now() + 1500, params: ["- 1500"] }),
+      new Job(noop, { time: Date.now() + 2500, params: ["- 2500"] }),
+      new Job(noop, { time: 5500, params: ["- 5500"] }),
+      new Job(noop, { time: 6500, params: ["- 6500"] }),
+    ];
+    scheduler.once(jobs[0]);
+    scheduler.once(jobs[1]);
+    scheduler.every(jobs[2]);
+    scheduler.every(jobs[3]);
+    for (const job of scheduler) copy.push(job);
+    scheduler.cancelAll();
+    assert.deepEqual(copy, jobs);
+  });
 
-  scheduler.fire(jobs[2], true);
-  scheduler.fire(jobs[1]);
-};
+  it('pipe', () => {
+    const copy = [];
+    const scheduler = new Scheduler();
+    const jobs = [
+      new Job(noop, { time: 1000, kind: "every", params: ["every"] }),
+      new Job(noop, { time: 1000, params: ["never"] }),
+      new Job(noop, { time: Date.now() + 2500, kind: "once", params: ["once"] })
+    ];
+    scheduler.pipe(jobs);
+    for (const j of scheduler) copy.push(j);
+    scheduler.cancelAll();
+    assert.deepEqual(copy, [jobs[0], jobs[2]]);
+  });
 
-const reschedule = () => {
-  const scheduler = new Scheduler();
+  it('no callback', () => {
+    const copy = [];
+    const job = new Job();
+    const scheduler = new Scheduler();
+    scheduler.once(job);
+    scheduler.every(job);
+    for (const j of scheduler) copy.push(j);
+    assert.deepEqual(copy, []);
+  });
 
-  const jobs = [
-    new Job(print, { time: Date.now() + 1500, params: ["- 1500"] }),
-    new Job(print, { time: Date.now() + 2500, params: ["- 2500"] }),
-    new Job(print, { time: 5500, params: ["- 5500"] }),
-    new Job(print, { time: 6500, params: ["- 6500"] }),
-  ];
+  it('same job', () => {
+    const copy = [];
+    const job = new Job(noop, { time: Date.now() + 1000, tag: "123" });
+    const scheduler = new Scheduler();
+    scheduler.once(job);
+    scheduler.once(job);
+    scheduler.every(job);
+    scheduler.every(job);
+    for (const j of scheduler) copy.push(j);
+    assert.deepEqual(copy, [job]);
+    scheduler.cancelAll();
+  });
 
-  scheduler.once(jobs[0]);
-  scheduler.reschedule(jobs[0].verbalDate("3.5s"));
-  scheduler.once(jobs[1]);
-  scheduler.every(jobs[2]);
-  scheduler.reschedule(jobs[2].verbalTime("10s"));
-  scheduler.every(jobs[3]);
-};
+  it('fire evicted job', () => {
+    const copy = [];
+    const job = new Job(noop, { time: 0, tag: "123" });
+    const scheduler = new Scheduler();
+    scheduler.once(job);
+    scheduler.fire(job);
+    for (const j of scheduler) copy.push(j);
+    assert.deepEqual(copy, []);
+  });
 
-const on = () => {
-  const scheduler = new Scheduler();
+  it('cancel evicted job', () => {
+    const copy = [];
+    const job = new Job(noop, { time: 0, tag: "123" });
+    const scheduler = new Scheduler();
+    scheduler.once(job);
+    scheduler.cancel(job);
+    for (const j of scheduler) copy.push(j);
+    assert.deepEqual(copy, []);
+  });
 
-  const jobs = [
-    new Job(print, { time: Date.now() + 1500, params: ["- 1500"] }),
-    new Job(print, { time: Date.now() + 2500, params: ["- 2500"] }),
-    new Job(print, { time: 5500, params: ["- 5500"] }),
-    new Job(print, { time: 6500, params: ["- 6500"] }),
-  ];
+  it('reschedule evicted job, job without kind', () => {
+    const copy = [];
+    const job = new Job(noop, { time: 0, tag: "123" });
+    const scheduler = new Scheduler();
+    scheduler.once(job);
+    scheduler.reschedule(job, "once");
+    scheduler.reschedule(job);
+    for (const j of scheduler) copy.push(j);
+    assert.deepEqual(copy, []);
+  });
 
-  scheduler
-    .on("add", misc.partial(console.log, "add"))
-    .on("cancel", misc.partial(console.log, "cancel"),)
-    .on("cancelAll", misc.partial(console.log, "cancelAll"),)
-    .on("fire", misc.partial(console.log, "fire"),)
-    .on("stop", misc.partial(console.log, "stop"),);
+  it('subscribe event doesn\'t exists', () => {
+    const scheduler = new Scheduler();
+    scheduler.on('smth', () => { });
+  });
+});
 
-  scheduler.once(jobs[0]);
-  scheduler.once(jobs[1]);
-  scheduler.every(jobs[2]);
-  scheduler.every(jobs[3]);
-  scheduler.cancel(jobs[1]);
-  scheduler.fire(jobs[0]);
 
-  setTimeout(() => {
-    scheduler.stop();
-  }, 4500);
-
-};
-
-const find = () => {
-  const scheduler = new Scheduler();
-  const jobs = array.accessor([
-    new Job(print, { time: 5000, tag: "tag" }),
-    new Job(print, { time: 5000, tag: [1, "hello"] }),
-    new Job(print, { time: 5000, tag: Symbol("test") })
-  ], { tag: 0, array: 1, symbol: 2 });
-
-  scheduler.every(jobs.tag);
-  scheduler.every(jobs.array);
-  scheduler.every(jobs.symbol);
-
-  const find_s = scheduler.find(jobs.tag.tag);
-  const find_array = scheduler.find(jobs.array.tag);
-  const find_symbol = scheduler.find(jobs.symbol.tag);
-
-  assert.deepEqual(find_s, jobs.tag);
-  assert.deepEqual(find_array, jobs.array);
-  assert.deepEqual(find_symbol, jobs.symbol);
-
-  scheduler.cancelAll();
-};
-
-const cancel = () => {
-  const scheduler = new Scheduler();
-
-  const jobs = [
-    new Job(print, { time: Date.now() + 1500, params: ["- 1500"] }),
-    new Job(print, { time: Date.now() + 2500, params: ["- 2500"] }),
-    new Job(print, { time: 5500, params: ["- 5500"] }),
-    new Job(print, { time: 6500, params: ["- 6500"] }),
-  ];
-
-  scheduler.on("cancel", misc.partial(console.log, "cancel"),)
-
-  scheduler.once(jobs[0]);
-  scheduler.once(jobs[1]);
-  scheduler.every(jobs[2]);
-  scheduler.every(jobs[3]);
-  scheduler.cancel(jobs[1]);
-  scheduler.cancel(jobs[0]);
-  scheduler.cancel(jobs[2]);
-};
-
-const cancelAll = () => {
-  const scheduler = new Scheduler();
-
-  const jobs = [
-    new Job(print, { time: Date.now() + 1500, params: ["- 1500"] }),
-    new Job(print, { time: Date.now() + 2500, params: ["- 2500"] }),
-    new Job(print, { time: 5500, params: ["- 5500"] }),
-    new Job(print, { time: 6500, params: ["- 6500"] }),
-  ];
-
-  scheduler.once(jobs[0]);
-  scheduler.once(jobs[1]);
-  scheduler.every(jobs[2]);
-  scheduler.every(jobs[3]);
-
-  // if u do setTimeout(scheduler.cancelAll, 2000), scheduler goes into Timer class where u can't use private fields
-  // WORKS setTimeout(scheduler.cancelAll.bind(scheduler), 2000);
-  setTimeout(() => scheduler.cancelAll(), 2000);
-};
-
-const stop = () => {
-  const scheduler = new Scheduler();
-
-  const jobs = [
-    new Job(print, { time: Date.now() + 1500, params: ["- 1500"] }),
-    new Job(print, { time: Date.now() + 2500, params: ["- 2500"] }),
-    new Job(print, { time: 5500, params: ["- 5500"] }),
-    new Job(print, { time: 6500, params: ["- 6500"] }),
-  ];
-
-  scheduler.once(jobs[0]);
-  scheduler.once(jobs[1]);
-  scheduler.every(jobs[2]);
-  scheduler.every(jobs[3]);
-
-  setTimeout(() => {
-    const jobs = scheduler.stop();
-    console.log(jobs);
-  }, 2000);
-};
-
-const iterator = () => {
-  const scheduler = new Scheduler();
-
-  const jobs = [
-    new Job(print, { time: Date.now() + 1500, params: ["- 1500"] }),
-    new Job(print, { time: Date.now() + 2500, params: ["- 2500"] }),
-    new Job(print, { time: 5500, params: ["- 5500"] }),
-    new Job(print, { time: 6500, params: ["- 6500"] }),
-  ];
-
-  scheduler.once(jobs[0]);
-  scheduler.once(jobs[1]);
-  scheduler.every(jobs[2]);
-  scheduler.every(jobs[3]);
-
-  for (const job of scheduler) {
-    console.log(job);
-  }
-};
-
-const pipe = () => {
-  const scheduler = new Scheduler();
-  const jobs = [
-    new Job(print, { time: 1000, kind: "every", params: ["every-1000"] }),
-    new Job(print, { time: 1000, params: ["never"] }), // will be omitted
-    new Job(print, { time: Date.now() + 2500, kind: "once", params: ["once-2500"] })
-  ];
-
-  scheduler.pipe(jobs);
-};
-
-const fns = [job, every, once, fire, reschedule, on, find, cancel, cancelAll, stop, iterator, pipe];
-
-for(const fn of fns) fn();
