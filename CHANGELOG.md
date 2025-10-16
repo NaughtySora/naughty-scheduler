@@ -35,3 +35,7 @@
 ## [0.4.2] 2025-01-20
 
 - long timer optimization
+
+## [0.4.2] 2025-10-17
+
+- test coverages
